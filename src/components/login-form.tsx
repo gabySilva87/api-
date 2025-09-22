@@ -1,9 +1,9 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 import { login } from '@/app/actions';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 // Estado inicial para a Server Action. `message` guarda mensagens de erro globais,
 // e `errors` guarda erros específicos de cada campo do formulário.
 const initialState = {
+  success: false,
   message: null,
   errors: {},
 };
@@ -56,22 +57,34 @@ function SubmitButton() {
 
 // Componente principal do formulário de login.
 export function LoginForm() {
+  const router = useRouter();
+  const { toast } = useToast();
   // `useActionState` é um hook do React para gerenciar o estado de formulários que usam Server Actions.
   // `state` contém as respostas da action (erros, mensagens), e `formAction` é o que aciona a action.
   const [state, formAction] = useActionState(login, initialState);
-  const { toast } = useToast();
 
-  // `useEffect` para observar mudanças no estado e exibir um "toast" de erro.
+  // `useEffect` para observar mudanças no estado e exibir toasts ou redirecionar.
   useEffect(() => {
-    // Se a action retornar uma mensagem de erro global, exibe o toast.
-    if (state?.message && state.message !== 'Dados inválidos.') {
+    // Se a action retornar sucesso, redireciona para o dashboard.
+    if (state?.success) {
+      toast({
+        title: 'Sucesso!',
+        description: state.message,
+      });
+      // Adiciona um pequeno delay para o usuário ver o toast antes de redirecionar.
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 500);
+    } 
+    // Se retornar um erro, exibe o toast de erro.
+    else if (state?.message && state.message !== 'Dados inválidos.') {
       toast({
         variant: 'destructive',
         title: 'Erro de Autenticação',
         description: state.message,
       });
     }
-  }, [state, toast]);
+  }, [state, router, toast]);
 
   return (
     <Card className="w-full max-w-sm shadow-none border-none bg-transparent">
@@ -84,11 +97,11 @@ export function LoginForm() {
         </CardHeader>
         <CardContent className="grid gap-6 mt-4">
           <div className="grid gap-2 text-left">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" name="email" required aria-describedby='email-error' className="bg-input border-none rounded-full px-5 py-6 text-background" />
-            {/* Área para exibir mensagens de erro específicas do campo de email. */}
-            <div id="email-error" aria-live="polite" aria-atomic="true">
-              {state?.errors?.email && <p className="text-sm font-medium text-destructive">{state.errors.email[0]}</p>}
+            <Label htmlFor="nome">Nome</Label>
+            <Input id="nome" type="text" name="nome" required aria-describedby='nome-error' className="bg-input border-none rounded-full px-5 py-6 text-background" />
+            {/* Área para exibir mensagens de erro específicas do campo de nome. */}
+            <div id="nome-error" aria-live="polite" aria-atomic="true">
+              {state?.errors?.nome && <p className="text-sm font-medium text-destructive">{state.errors.nome[0]}</p>}
             </div>
           </div>
           <div className="grid gap-2 text-left">
